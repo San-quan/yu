@@ -1,0 +1,21 @@
+{
+  "name": "yuminglunxun",
+  "main": "index.js",
+  "compatibility_date": "2024-01-01",
+  "vars": {
+    "ROOT_DOMAINS": "zhhg.online,jianliao.store,jianliao.online",
+    "TARGET_WORKER": "yuminglunxun.papyri-navies-0z.workers.dev"
+  },
+  "kv_namespaces": [
+    {
+      "binding": "DB",
+      "id": "33c9d9c95fa642b0bb3a2ac6bbb7d225"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "DB_BUCKET",
+      "bucket_name": "apk"
+    }
+  ]
+}
