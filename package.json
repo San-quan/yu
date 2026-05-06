@@ -1,0 +1,12 @@
+{
+  "name": "yu0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "webpack --mode=production"
+  },
+  "devDependencies": {
+    "webpack": "^5.98.0",
+    "webpack-cli": "^5.1.4"
+  }
+}

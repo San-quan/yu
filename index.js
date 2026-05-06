@@ -177,6 +177,19 @@ async function ensurePoolSizeSmooth(env) {
   if (need > 0) await generateAndRotateDomains(env, need);
 }
 
+/* ====================== 健康检查 ====================== */
+async function handleHealth(request, env) {
+  const pool = (await env.DB.list({ prefix: "DOMAIN_GLOBAL_" })).keys.length;
+  return new Response(JSON.stringify({
+    ok: true,
+    version: "v9.8",
+    pool
+  }), {
+    status: 200,
+    headers: { "Content-Type": "application/json; charset=utf-8" }
+  });
+}
+
 /* ====================== 真实 APK 下载 ====================== */
 async function handleOneTimeDownload(token, request, env, ctx) {
   const obj = await env.DB_BUCKET.get("apk/latest.apk");
