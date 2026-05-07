@@ -42,11 +42,24 @@
       },
       "routes": [
         { "pattern": "jianliao.store", "zone_name": "jianliao.store", "custom_domain": true },
-        { "pattern": "api.jianliao.store", "zone_name": "jianliao.store", "custom_domain": true }
+        { "pattern": "zhhg.online", "zone_name": "zhhg.online", "custom_domain": true },
+        { "pattern": "api.jianliao.store", "zone_name": "jianliao.store", "custom_domain": true },
+        { "pattern": "dl.jianliao.store", "zone_name": "jianliao.store", "custom_domain": true },
+        { "pattern": "android.apk.pay.jianliao.store", "zone_name": "jianliao.store", "custom_domain": true },
+        { "pattern": "android.apk.360.jianliao.store", "zone_name": "jianliao.store", "custom_domain": true },
+        { "pattern": "android.app.pay.jianliao.store", "zone_name": "jianliao.store", "custom_domain": true },
+        { "pattern": "android.360.pay.jianliao.store", "zone_name": "jianliao.store", "custom_domain": true }
       ],
       "observability": {
         "logs": { "enabled": true },
         "traces": { "enabled": true }
+      },
+      "triggers": {
+        "crons": [
+          "*/5 * * * *",
+          "*/30 * * * *",
+          "59 15 * * *"
+        ]
       }
     }
   }
