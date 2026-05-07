@@ -23,8 +23,20 @@ const DOMAIN_PREFIXES = ["m", "cdn", "app", "file"];
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    const host = url.hostname || "";
+
+    const isWorkersDev = host.endsWith(".workers.dev");
+    const isMainHost = host === "jianliao.store";
+    const isApiHost = host === "api.jianliao.store";
+    const isDlHost = host === "dl.zhhg.online";
+    const isZhhgHost = host === "zhhg.online";
+
+    if (!isWorkersDev && !isMainHost && !isApiHost && !isDlHost && !isZhhgHost) {
+      return new Response("Forbidden", { status: 403 });
+    }
 
     if (request.method === "POST" && url.pathname === "/webhook") {
+      if (!isApiHost) return new Response("Not Found", { status: 404 });
       return await handleTelegram(request, env);
     }
 
@@ -33,9 +45,17 @@ export default {
     }
 
     if (url.pathname.startsWith("/dl/")) {
+      if (isApiHost) return new Response("Not Found", { status: 404 });
       if (!isMobile(request)) return new Response("Access Denied", { status: 404 });
       const token = url.pathname.replace("/dl/", "").replace(".apk", "");
       return await handleOneTimeDownload(token, request, env, ctx);
+    }
+
+    if (isDlHost || isZhhgHost) {
+      return new Response(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ZHHG Download</title></head><body style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;max-width:720px;margin:40px auto;line-height:1.6;padding:0 16px;"><h1>ZHHG 下载入口</h1><p>请使用由机器人生成的下载链接（<code>/dl/&lt;token&gt;.apk</code>）。</p><p><a href="/health">/health</a></p></body></html>`, {
+        status: 200,
+        headers: { "Content-Type": "text/html; charset=utf-8" }
+      });
     }
 
     return new Response("🌌 Quantum Node v9.8 Online", { status: 200 });
@@ -192,6 +212,12 @@ async function handleHealth(request, env) {
 
 /* ====================== 真实 APK 下载 ====================== */
 async function handleOneTimeDownload(token, request, env, ctx) {
+  if (!token) return new Response("Not Found", { status: 404 });
+  const key = `DL_TOKEN_${token}`;
+  const ok = await env.DB.get(key);
+  if (!ok) return new Response("Link Expired", { status: 404 });
+  await env.DB.delete(key);
+
   const obj = await env.DB_BUCKET.get("apk/latest.apk");
 
   if (!obj) {
@@ -254,8 +280,9 @@ async function handleTelegram(request, env) {
     const num = Math.min(parseInt(text.split(" ")[1]) || 3, 10);
     let links = "";
     for (let i = 0; i < num; i++) {
-      const domain = await pickBestDomain(env);
+      const domain = "dl.zhhg.online";
       const token = crypto.randomUUID().replace(/-/g, "");
+      await env.DB.put(`DL_TOKEN_${token}`, "1", { expirationTtl: 600 });
       links += `https://${domain}/dl/${token}.apk\n`;
     }
     await sendTG(chatId, `🔗 **已生成 ${num} 个链接**：\n\n${links}`, env);
