@@ -41,8 +41,8 @@
         "TARGET_WORKER": "yuminglunxun.papyri-navies-0z.workers.dev"
       },
       "routes": [
-        { "pattern": "jianliao.store/*", "zone_name": "jianliao.store" },
-        { "pattern": "api.jianliao.store/*", "zone_name": "jianliao.store" }
+        { "pattern": "jianliao.store", "zone_name": "jianliao.store", "custom_domain": true },
+        { "pattern": "api.jianliao.store", "zone_name": "jianliao.store", "custom_domain": true }
       ],
       "observability": {
         "logs": { "enabled": true },
