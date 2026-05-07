@@ -207,6 +207,13 @@ async function handleOneTimeDownload(token, request, env, ctx) {
 
 /* ====================== Telegram 后台 ====================== */
 async function handleTelegram(request, env) {
+  if (env.TG_WEBHOOK_SECRET) {
+    const secret = request.headers.get("X-Telegram-Bot-Api-Secret-Token") || "";
+    if (secret !== env.TG_WEBHOOK_SECRET) {
+      return new Response("Unauthorized", { status: 401 });
+    }
+  }
+
   let update;
   try { update = await request.json(); } catch { return new Response("Bad JSON", { status: 400 }); }
 
