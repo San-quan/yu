@@ -728,8 +728,12 @@ async function handleTelegram(request, env) {
     if (data === "menu_links") {
       const links = await getPublicDownloadLinks(env);
       await sendTG(chatId, `🔗 **当前下载链接**\nAndroid: ${links.android}\niOS: ${links.ios}`, env);
-      await sendTGPhoto(chatId, qrUrl(links.android), "Android 下载二维码", env);
-      await sendTGPhoto(chatId, qrUrl(links.ios), "iOS 下载二维码", env);
+      const aPoster = `https://jianliao.store/qrpng?data=${encodeURIComponent(links.android)}&v=${Date.now()}`;
+      const iPoster = `https://jianliao.store/qrpng?data=${encodeURIComponent(links.ios)}&v=${Date.now()}`;
+      const aOk = await sendTGPhoto(chatId, aPoster, "Android 下载二维码", env);
+      if (!aOk) await sendTGPhoto(chatId, `${qrUrl(links.android)}&v=${Date.now()}`, "Android 下载二维码", env);
+      const iOk = await sendTGPhoto(chatId, iPoster, "iOS 下载二维码", env);
+      if (!iOk) await sendTGPhoto(chatId, `${qrUrl(links.ios)}&v=${Date.now()}`, "iOS 下载二维码", env);
       return new Response("OK");
     }
 
@@ -789,8 +793,12 @@ async function handleTelegram(request, env) {
   if (text === "/links") {
     const links = await getPublicDownloadLinks(env);
     await sendTG(chatId, `🔗 **当前下载链接**\nAndroid: ${links.android}\niOS: ${links.ios}`, env);
-    await sendTGPhoto(chatId, qrUrl(links.android), "Android 下载二维码", env);
-    await sendTGPhoto(chatId, qrUrl(links.ios), "iOS 下载二维码", env);
+    const aPoster = `https://jianliao.store/qrpng?data=${encodeURIComponent(links.android)}&v=${Date.now()}`;
+    const iPoster = `https://jianliao.store/qrpng?data=${encodeURIComponent(links.ios)}&v=${Date.now()}`;
+    const aOk = await sendTGPhoto(chatId, aPoster, "Android 下载二维码", env);
+    if (!aOk) await sendTGPhoto(chatId, `${qrUrl(links.android)}&v=${Date.now()}`, "Android 下载二维码", env);
+    const iOk = await sendTGPhoto(chatId, iPoster, "iOS 下载二维码", env);
+    if (!iOk) await sendTGPhoto(chatId, `${qrUrl(links.ios)}&v=${Date.now()}`, "iOS 下载二维码", env);
     return new Response("OK");
   }
 
