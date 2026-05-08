@@ -234,6 +234,34 @@ Worker 内对 Host 做了严格 allowlist（避免杂牌域蹭流量）。若要
 
 ---
 
+## 9.1 离线生成“永久导航二维码海报”（Python）
+
+Worker 侧的 `/qrpng` 面向“动态内容/群内回复转二维码”。如果你要做**固定不变**的“永久导航二维码海报”（例如指向你的中转页/不死码入口），建议离线生成，避免线上被刷图、也不依赖外部 raster 服务。
+
+脚本位置：
+
+- `tools/generate_poster.py`
+
+安装依赖：
+
+```bash
+python -m pip install -r tools/requirements.txt
+```
+
+生成默认海报（输出 `new_jianliao_poster.png`）：
+
+```bash
+python tools/generate_poster.py
+```
+
+自定义目标链接/输出文件名（推荐）：
+
+```bash
+python tools/generate_poster.py --url "https://your-new-link.pages.dev" --output "poster_v2.png"
+```
+
+---
+
 ## 10. 统计与每日战报
 
 ### 10.1 统计口径
