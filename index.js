@@ -81,7 +81,8 @@ export default {
         const data = url.searchParams.get("data") || url.searchParams.get("url") || "";
         if (!data) return new Response("Not Found", { status: 404 });
         if (!allowHotlink(request)) return new Response("禁止盗用外链", { status: 403 });
-        const svg = await buildPosterSvg(data);
+        const style = (url.searchParams.get("style") || "dynamic").toLowerCase();
+        const svg = await buildPosterSvg(data, style);
         return new Response(svg, {
           status: 200,
           headers: {
@@ -95,8 +96,9 @@ export default {
         const data = url.searchParams.get("data") || url.searchParams.get("url") || "";
         if (!data) return new Response("Not Found", { status: 404 });
         if (!allowHotlink(request)) return new Response("禁止盗用外链", { status: 403 });
+        const style = (url.searchParams.get("style") || "dynamic").toLowerCase();
         const v = url.searchParams.get("v") || "";
-        const src = `${url.origin}/qrsvg?data=${encodeURIComponent(data)}${v ? `&v=${encodeURIComponent(v)}` : ""}`;
+        const src = `${url.origin}/qrsvg?data=${encodeURIComponent(data)}&style=${encodeURIComponent(style)}${v ? `&v=${encodeURIComponent(v)}` : ""}`;
         const raster = `https://images.weserv.nl/?url=${encodeURIComponent(src)}&output=png`;
         const res = await fetch(raster);
         if (!res.ok) {
@@ -728,8 +730,8 @@ async function handleTelegram(request, env) {
     if (data === "menu_links") {
       const links = await getPublicDownloadLinks(env);
       await sendTG(chatId, `🔗 **当前下载链接**\nAndroid: ${links.android}\niOS: ${links.ios}`, env);
-      const aPoster = `https://jianliao.store/qrpng?data=${encodeURIComponent(links.android)}&v=${Date.now()}`;
-      const iPoster = `https://jianliao.store/qrpng?data=${encodeURIComponent(links.ios)}&v=${Date.now()}`;
+      const aPoster = `https://jianliao.store/qrpng?style=fixed&data=${encodeURIComponent(links.android)}&v=${Date.now()}`;
+      const iPoster = `https://jianliao.store/qrpng?style=fixed&data=${encodeURIComponent(links.ios)}&v=${Date.now()}`;
       const aOk = await sendTGPhoto(chatId, aPoster, "Android 下载二维码", env);
       if (!aOk) await sendTGPhoto(chatId, `${qrUrl(links.android)}&v=${Date.now()}`, "Android 下载二维码", env);
       const iOk = await sendTGPhoto(chatId, iPoster, "iOS 下载二维码", env);
@@ -793,8 +795,8 @@ async function handleTelegram(request, env) {
   if (text === "/links") {
     const links = await getPublicDownloadLinks(env);
     await sendTG(chatId, `🔗 **当前下载链接**\nAndroid: ${links.android}\niOS: ${links.ios}`, env);
-    const aPoster = `https://jianliao.store/qrpng?data=${encodeURIComponent(links.android)}&v=${Date.now()}`;
-    const iPoster = `https://jianliao.store/qrpng?data=${encodeURIComponent(links.ios)}&v=${Date.now()}`;
+    const aPoster = `https://jianliao.store/qrpng?style=fixed&data=${encodeURIComponent(links.android)}&v=${Date.now()}`;
+    const iPoster = `https://jianliao.store/qrpng?style=fixed&data=${encodeURIComponent(links.ios)}&v=${Date.now()}`;
     const aOk = await sendTGPhoto(chatId, aPoster, "Android 下载二维码", env);
     if (!aOk) await sendTGPhoto(chatId, `${qrUrl(links.android)}&v=${Date.now()}`, "Android 下载二维码", env);
     const iOk = await sendTGPhoto(chatId, iPoster, "iOS 下载二维码", env);
@@ -813,7 +815,7 @@ async function handleTelegram(request, env) {
       await sendTG(chatId, "用法：回复一条消息，然后发送 /qr（将被回复消息内容转二维码）", env);
       return new Response("OK");
     }
-    const photo = `https://jianliao.store/qrpng?data=${encodeURIComponent(payload)}&v=${Date.now()}`;
+    const photo = `https://jianliao.store/qrpng?style=dynamic&data=${encodeURIComponent(payload)}&v=${Date.now()}`;
     const ok = await sendTGPhoto(chatId, photo, "二维码（PNG）", env);
     if (!ok) {
       await sendTGPhoto(chatId, `${qrUrl(payload)}&v=${Date.now()}`, "二维码（PNG）", env);
@@ -956,69 +958,66 @@ async function sendTGDocument(chatId, docUrl, filename, caption, env) {
   }
 }
 
-async function buildPosterSvg(data) {
+async function buildPosterSvg(data, style = "dynamic") {
+  if (style === "fixed") return await buildFixedPosterSvg(data);
+  return await buildDynamicPosterSvg(data);
+}
+
+async function buildFixedPosterSvg(data) {
+  const bgUrl = "https://i.imgant.com/v2/0Jny5nZ.png";
+  const logoUrl = "https://i.imgant.com/v2/KaN5x9T.jpeg";
+  const bgData = await fetchAsDataUri(bgUrl, "image/png");
+  const logoData = await fetchAsDataUri(logoUrl, "image/jpeg");
+
   const qr = await fetch(`https://api.qrserver.com/v1/create-qr-code/?size=600x600&format=svg&margin=4&data=${encodeURIComponent(data)}`);
   const qrSvg = await qr.text();
   const inner = extractSvgInner(qrSvg);
-  const logoUrl = "https://i.imgant.com/v2/4pGdor9.png";
-  const logoData = await fetchAsDataUri(logoUrl, "image/png");
-  const partnerTencent = await fetchAsDataUri("https://i.imgant.com/v2/Lg3QrGT.png", "image/png");
-  const partnerByte = await fetchAsDataUri("https://i.imgant.com/v2/SbQ2wKK.png", "image/png");
-  const partnerKuaishou = await fetchAsDataUri("https://i.imgant.com/v2/8vUejKW.png", "image/png");
-  const partnerNetease = await fetchAsDataUri("https://i.imgant.com/v2/VTMEzUx.png", "image/png");
 
-  const canvasW = 1080, canvasH = 1280;
+  const canvasW = 1080, canvasH = 1320;
+  const qrSize = 630;
+  const qrLeft = 225;
+  const qrTop = 300;
+
+  const logoPx = 120;
+  const padding = 10;
+  const bgSize = logoPx + padding;
+  const r = Math.floor(15);
+  const cx = qrLeft + Math.floor(qrSize / 2);
+  const cy = qrTop + Math.floor(qrSize / 2);
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<svg width="${canvasW}" height="${canvasH}" viewBox="0 0 ${canvasW} ${canvasH}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <image x="0" y="0" width="${canvasW}" height="${canvasH}" href="${bgData}" preserveAspectRatio="xMidYMid slice"/>
+
+  <g transform="translate(${qrLeft},${qrTop}) scale(${qrSize/600})">
+    ${inner}
+  </g>
+
+  <rect x="${cx - Math.floor(bgSize/2)}" y="${cy - Math.floor(bgSize/2)}" width="${bgSize}" height="${bgSize}" rx="${r + 2}" fill="#ffffff"/>
+  <image x="${cx - Math.floor(logoPx/2)}" y="${cy - Math.floor(logoPx/2)}" width="${logoPx}" height="${logoPx}" href="${logoData}" preserveAspectRatio="xMidYMid slice"/>
+</svg>`;
+}
+
+async function buildDynamicPosterSvg(data) {
+  const qr = await fetch(`https://api.qrserver.com/v1/create-qr-code/?size=600x600&format=svg&margin=4&data=${encodeURIComponent(data)}`);
+  const qrSvg = await qr.text();
+  const inner = extractSvgInner(qrSvg);
+  const canvasW = 1080, canvasH = 1180;
   const bg = "#f5f7fa";
   const centerX = canvasW / 2;
-  const margin = 86;
-  const contentW = canvasW - margin * 2;
 
-  const headerY1 = 196;
-  const headerY2 = 274;
+  const headerY1 = 178;
+  const headerY2 = 250;
 
   const cardW = 640;
-  const cardPad = 52;
+  const cardPad = 56;
   const cardX = (canvasW - cardW) / 2;
-  const cardY = 348;
+  const cardY = 320;
   const cardR = 64;
 
-  const qrSize = 500;
+  const qrSize = 520;
   const qrX = cardX + (cardW - qrSize) / 2;
   const qrY = cardY + cardPad;
-
-  const logoPx = 112;
-  const cx = qrX + qrSize / 2;
-  const cy = qrY + qrSize / 2;
-  const r = logoPx / 2;
-
-  const partnersBoxW = contentW;
-  const partnersBoxX = margin;
-  const partnersBoxY = cardY + cardW + 72;
-  const partnersBoxR = 28;
-
-  const dividerY = partnersBoxY + 38;
-  const gridY = dividerY + 58;
-  const tileW = (partnersBoxW - 18) / 2;
-  const tileH = 92;
-  const gap = 18;
-  const gridX1 = partnersBoxX;
-  const gridX2 = partnersBoxX + tileW + gap;
-  const row1Y = gridY;
-  const row2Y = gridY + tileH + gap;
-
-  const iconSize = 72;
-  const iconGap = 20;
-  const iconX1 = gridX1 + 8;
-  const iconX2 = gridX2 + 8;
-  const iconY1 = row1Y + (tileH - iconSize) / 2;
-  const iconY2 = row2Y + (tileH - iconSize) / 2;
-  const textX1 = iconX1 + iconSize + iconGap;
-  const textX2 = iconX2 + iconSize + iconGap;
-  const textY1 = row1Y + tileH / 2;
-  const textY2 = row2Y + tileH / 2;
-
-  const taglineY = row2Y + tileH + 66;
-  const partnersBoxH = (taglineY + 44) - partnersBoxY;
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg width="${canvasW}" height="${canvasH}" viewBox="0 0 ${canvasW} ${canvasH}" xmlns="http://www.w3.org/2000/svg">
@@ -1044,41 +1043,13 @@ async function buildPosterSvg(data) {
   <rect width="100%" height="100%" fill="url(#bgGlow2)"/>
 
   <text x="${centerX}" y="${headerY1}" font-size="62" fill="#141414" text-anchor="middle" font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif" font-weight="900">官方安全下载通道</text>
-  <text x="${centerX}" y="${headerY2}" font-size="34" fill="#7c3aed" text-anchor="middle" font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif" font-weight="900" letter-spacing="1">请使用手机浏览器扫描下方二维码</text>
+  <text x="${centerX}" y="${headerY2}" font-size="34" fill="#7c3aed" text-anchor="middle" font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif" font-weight="900" letter-spacing="1">请使用浏览器扫一扫</text>
 
   <rect x="${cardX}" y="${cardY}" width="${cardW}" height="${cardW}" rx="${cardR}" fill="#ffffff" filter="url(#shadow)"/>
   <rect x="${cardX}" y="${cardY}" width="${cardW}" height="${cardW}" rx="${cardR}" fill="none" stroke="rgba(0,0,0,0.06)" stroke-width="2"/>
   <g transform="translate(${qrX},${qrY}) scale(${qrSize/600})">
     ${inner}
   </g>
-
-  <rect x="${cx - r}" y="${cy - r}" width="${logoPx}" height="${logoPx}" rx="24" fill="#ffffff" filter="url(#shadow2)"/>
-  <rect x="${cx - r + 8}" y="${cy - r + 8}" width="${logoPx - 16}" height="${logoPx - 16}" rx="18" fill="#ffffff"/>
-  <image x="${cx - r + 8}" y="${cy - r + 8}" width="${logoPx - 16}" height="${logoPx - 16}" href="${logoData}" preserveAspectRatio="xMidYMid meet"/>
-
-  <!-- partners box frame removed -->
-  <g>
-    <line x1="${centerX - 300}" y1="${dividerY}" x2="${centerX - 132}" y2="${dividerY}" stroke="rgba(0,0,0,0.12)" stroke-width="2"/>
-    <text x="${centerX}" y="${dividerY + 6}" font-size="30" fill="#4f5964" text-anchor="middle" font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif" letter-spacing="4" font-weight="900">官方合作伙伴</text>
-    <line x1="${centerX + 132}" y1="${dividerY}" x2="${centerX + 300}" y2="${dividerY}" stroke="rgba(0,0,0,0.12)" stroke-width="2"/>
-  </g>
-
-  <g>
-    <!-- partner tiles: no background cards -->
-    <image x="${iconX1}" y="${iconY1}" width="${iconSize}" height="${iconSize}" href="${partnerTencent}" preserveAspectRatio="xMidYMid meet"/>
-    <text x="${textX1}" y="${textY1}" font-size="28" fill="#2a2f35" text-anchor="start" dominant-baseline="middle" font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif" font-weight="900">腾讯</text>
-
-    <image x="${iconX2}" y="${iconY1}" width="${iconSize}" height="${iconSize}" href="${partnerByte}" preserveAspectRatio="xMidYMid meet"/>
-    <text x="${textX2}" y="${textY1}" font-size="28" fill="#2a2f35" text-anchor="start" dominant-baseline="middle" font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif" font-weight="900">抖音</text>
-
-    <image x="${iconX1}" y="${iconY2}" width="${iconSize}" height="${iconSize}" href="${partnerKuaishou}" preserveAspectRatio="xMidYMid meet"/>
-    <text x="${textX1}" y="${textY2}" font-size="28" fill="#2a2f35" text-anchor="start" dominant-baseline="middle" font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif" font-weight="900">快手</text>
-
-    <image x="${iconX2}" y="${iconY2}" width="${iconSize}" height="${iconSize}" href="${partnerNetease}" preserveAspectRatio="xMidYMid meet"/>
-    <text x="${textX2}" y="${textY2}" font-size="28" fill="#2a2f35" text-anchor="start" dominant-baseline="middle" font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif" font-weight="900">网易</text>
-  </g>
-
-  <text x="50%" y="${taglineY}" font-size="24" fill="#7c3aed" text-anchor="middle" font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif" font-weight="900">联合推荐 · 安全下载</text>
 
 </svg>`;
 }
