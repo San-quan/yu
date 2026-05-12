@@ -774,7 +774,7 @@ async function handleTelegram(request, env) {
     return new Response("OK");
   }
 
-  if (text === "/start") {
+  if (text === "/start" || text === "/开始") {
     const keyboard = {
       inline_keyboard: [
         [
@@ -790,12 +790,12 @@ async function handleTelegram(request, env) {
     return new Response("OK");
   }
 
-  if (text === "/help") {
-    await sendTG(chatId, `/start - 显示功能菜单与快捷按钮\n/help - 查看指令帮助与用法\n/get <数量> - 生成当日一次性下载链接（1-10，默认10，仅群内）\n/pool - 查看今日战绩与系统状态\n/update - 上传 APK（需携带 .apk 文件，管理员/授权用户可用）\n/links - 查看当前 Android/iOS 公共下载链接\n/set android <url> - 设置 Android 公共下载链接\n/set ios <url> - 设置 iOS 公共下载链接`, env);
+  if (text === "/help" || text === "/帮助") {
+    await sendTG(chatId, `/start (或 /开始) - 显示功能菜单与快捷按钮\n/help (或 /帮助) - 查看指令帮助与用法\n/get <数量> (或 /获取 <数量>) - 生成当日一次性下载链接（1-10，默认5，仅群内）\n/L (或 /链接) - 快捷生成5条链接（仅群内）\n/pool (或 /战绩) - 查看今日战绩与系统状态\n/update (或 /上传) - 上传 APK（需携带 .apk 文件，管理员/授权用户可用）\n/links (或 /直链) - 查看当前 Android/iOS 公共下载链接\n/set android <url> (或 /设置 android <url>) - 设置 Android 公共下载链接\n/set ios <url> (或 /设置 ios <url>) - 设置 iOS 公共下载链接`, env);
     return new Response("OK");
   }
 
-  if (text === "/links") {
+  if (text === "/links" || text === "/直链") {
     const links = await getPublicDownloadLinks(env);
     await sendTG(chatId, `🔗 **当前下载链接**\nAndroid: ${links.android}\niOS: ${links.ios}`, env);
     const aPoster = `https://jianliao.store/qrpng?style=fixed&data=${encodeURIComponent(links.android)}&v=${Date.now()}`;
@@ -807,7 +807,7 @@ async function handleTelegram(request, env) {
     return new Response("OK");
   }
 
-  if (text === "/qr") {
+  if (text === "/qr" || text === "/二维码") {
     if (!msgIsGroup) return new Response("OK");
     const replied = update.message?.reply_to_message;
     const payload =
@@ -838,7 +838,7 @@ async function handleTelegram(request, env) {
     return new Response("OK");
   }
 
-  if ((msgIsGroup || isSuper) && (text === "/set" || text.startsWith("/set "))) {
+  if ((msgIsGroup || isSuper) && (text === "/set" || text.startsWith("/set ") || text === "/设置" || text.startsWith("/设置 "))) {
     const parts = text.split(" ").filter(Boolean);
     const key = (parts[1] || "").toLowerCase();
     const url = parts.slice(2).join(" ").trim();
@@ -862,7 +862,7 @@ async function handleTelegram(request, env) {
     return new Response("OK");
   }
 
-  if (text === "/get" || text.startsWith("/get ")) {
+  if (text === "/get" || text.startsWith("/get ") || text === "/获取" || text.startsWith("/获取 ")) {
     if (!msgIsGroup) return new Response("OK");
     const ref = String(fromId);
     const parts = text.split(" ").filter(Boolean);
@@ -877,7 +877,7 @@ async function handleTelegram(request, env) {
     return new Response("OK");
   }
 
-  if (text === "/pool") {
+  if (text === "/pool" || text === "/战绩") {
     const pool = (await env.DB.list({ prefix: "DOMAIN_GLOBAL_" })).keys.length;
     const ymd = new Date().toISOString().slice(0, 10);
     const report = await buildDailyReport(env, ymd);
@@ -885,7 +885,7 @@ async function handleTelegram(request, env) {
     return new Response("OK");
   }
 
-  if (text === "/update" && update.message.document?.file_name?.endsWith(".apk")) {
+  if ((text === "/update" || text === "/上传") && update.message.document?.file_name?.endsWith(".apk")) {
     const authorized = isSuper || await isAuthorized(fromId, env);
     if (!authorized) {
       await sendTG(chatId, "❌ 权限不足", env);
