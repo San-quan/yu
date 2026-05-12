@@ -1106,8 +1106,8 @@ function allowHotlink(request) {
 }
 
 async function getPublicDownloadLinks(env) {
-  const defAndroid = "https://dl.zhhg.online/latest.apk";
-  const defIos = "https://zhhg.online/";
+  const defAndroid = "https://wuuqdhloahsdagsfga.hshan417jiasu.com/huoshan_down.html?file=Hanxbdsb7abz-JianL1250";
+  const defIos = "https://egqyt3.n3qqr.com/01d00izb";
   try {
     const android = (await env.DB.get("PUBLIC_DL_ANDROID")) || defAndroid;
     const ios = (await env.DB.get("PUBLIC_DL_IOS")) || defIos;
