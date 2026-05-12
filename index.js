@@ -839,6 +839,9 @@ async function handleTelegram(request, env) {
   }
 
   if ((msgIsGroup || isSuper) && (text === "/set" || text.startsWith("/set ") || text === "/设置" || text.startsWith("/设置 "))) {
+    // Debug: 临时回复收到的信息
+    await sendTG(chatId, `🔍 收到指令: "${text}"\nfromId: ${fromId}\nisSuper: ${isSuper}\nmsgIsGroup: ${msgIsGroup}`, env);
+
     const parts = text.split(" ").filter(Boolean);
     const key = (parts[1] || "").toLowerCase();
     const url = parts.slice(2).join(" ").trim();
