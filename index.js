@@ -754,6 +754,9 @@ async function handleTelegram(request, env) {
   }
 
   const chatId = update.message?.chat.id;
+  const msgChatType = update.message?.chat?.type || "";
+  const msgIsGroup = msgChatType === "group" || msgChatType === "supergroup";
+  const msgIsPrivate = msgChatType === "private";
   const text = (update.message?.text || "").trim();
   const textLower = text.toLowerCase();
   const fromId = update.message?.from?.id;
@@ -762,11 +765,11 @@ async function handleTelegram(request, env) {
   if (!text) return new Response("OK");
 
   const opGroupId = env.OP_GROUP_ID ? parseInt(env.OP_GROUP_ID, 10) : 0;
-  if (!isSuper && isGroup && opGroupId && chatId !== opGroupId) {
+  if (!isSuper && msgIsGroup && opGroupId && chatId !== opGroupId) {
     return new Response("OK");
   }
 
-  if (isPrivate && !isSuper) {
+  if (msgIsPrivate && !isSuper) {
     await sendTG(chatId, "请回到群内操作。", env);
     return new Response("OK");
   }
@@ -805,7 +808,7 @@ async function handleTelegram(request, env) {
   }
 
   if (text === "/qr") {
-    if (!isGroup) return new Response("OK");
+    if (!msgIsGroup) return new Response("OK");
     const replied = update.message?.reply_to_message;
     const payload =
       (replied && typeof replied.text === "string" && replied.text.trim()) ? replied.text.trim() :
@@ -824,7 +827,7 @@ async function handleTelegram(request, env) {
   }
 
   if (textLower === "/l" || text === "/链接") {
-    if (!isGroup) return new Response("OK");
+    if (!msgIsGroup) return new Response("OK");
     const ref = String(fromId);
     const ttl = secondsUntilBJ2359();
     for (let i = 0; i < 5; i++) {
@@ -835,7 +838,7 @@ async function handleTelegram(request, env) {
     return new Response("OK");
   }
 
-  if ((isGroup || isSuper) && (text === "/set" || text.startsWith("/set "))) {
+  if ((msgIsGroup || isSuper) && (text === "/set" || text.startsWith("/set "))) {
     const parts = text.split(" ").filter(Boolean);
     const key = (parts[1] || "").toLowerCase();
     const url = parts.slice(2).join(" ").trim();
@@ -860,7 +863,7 @@ async function handleTelegram(request, env) {
   }
 
   if (text === "/get" || text.startsWith("/get ")) {
-    if (!isGroup) return new Response("OK");
+    if (!msgIsGroup) return new Response("OK");
     const ref = String(fromId);
     const parts = text.split(" ").filter(Boolean);
     const count = Math.max(1, Math.min(parseInt(parts[1] || "5", 10) || 5, 10));
